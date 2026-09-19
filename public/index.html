@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f172a; 
+            color: #fff; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+        }
+
+        h2 { 
+            text-align: center; 
+            margin-top: 0; 
+            margin-bottom: 25px; 
+            font-size: 28px;
+        }
+
+        .search-bar { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 30px; 
+        }
+
+        input[type="text"] { 
+            flex: 1; 
+            padding: 14px 18px; 
+            border-radius: 8px; 
+            border: 1px solid #334155; 
+            background: #1e293b; 
+            color: #fff; 
+            font-size: 16px; 
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+
+        .fetch-btn { 
+            padding: 14px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            background: #ef4444; 
+            color: #fff; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 16px; 
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .fetch-btn:hover { background: #dc2626; }
+
+        .video-surface { 
+            display: none; 
+            gap: 24px;
+            align-items: flex-start;
+            padding-top: 10px;
+        }
+
+        .media-left {
+            flex: 1;
+            max-width: 360px;
+        }
+
+        .media-left img { 
+            width: 100%; 
+            border-radius: 10px; 
+            display: block;
+            margin-bottom: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .video-title { 
+            font-size: 16px; 
+            line-height: 1.4; 
+            color: #f8fafc; 
+            font-weight: 600;
+        }
+
+        .controls-right {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .section-label { 
+            font-size: 13px; 
+            color: #94a3b8; 
+            margin-bottom: 6px; 
+            display: block; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .format-tabs { 
+            display: flex; 
+            gap: 10px; 
+            background: #1e293b; 
+            padding: 6px; 
+            border-radius: 8px; 
+            border: 1px solid #334155;
+        }
+
+        .tab-btn { 
+            flex: 1; 
+            padding: 10px; 
+            border: none; 
+            background: transparent; 
+            color: #94a3b8; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+        }
+
+        .tab-btn.active { 
+            background: #38bdf8; 
+            color: #0f172a; 
+        }
+
+        .select-box {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .download-btn { 
+            width: 100%; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 8px; 
+            background: #22c55e; 
+            color: #fff; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background 0.2s;
+            margin-top: 4px;
+        }
+        .download-btn:hover { background: #16a34a; }
+        .download-btn:disabled { background: #334155; cursor: not-allowed; color: #94a3b8; }
+
+        /* Progress Bar UI Container */
+        .progress-container {
+            display: none;
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+        }
+
+        .stat-item {
+            margin-right: 12px;
+            margin-left: 12px;
+        }
+        .stat-item:first-child {
+            margin-left: 0;
+        }
+
+        .cancel-btn {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .cancel-btn:hover { color: #dc2626; }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 8px;
+            background: #0f172a;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: #38bdf8;
+            transition: width 0.1s linear;
+        }
+
+        .progress-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 650px) {
+            .video-surface {
+                flex-direction: column;
+            }
+            .media-left {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>YouTube Downloader</h2>
+
+    <div class="search-bar">
+        <input type="text" id="ytUrl" placeholder="Paste YouTube link here..." />
+        <button id="fetchBtn" class="fetch-btn" onclick="fetchVideoInfo()">Fetch Video</button>
+    </div>
+
+    <div id="videoSurface" class="video-surface">
+        <div class="media-left">
+            <img id="thumb" alt="Thumbnail" />
+            <div id="videoTitle" class="video-title"></div>
+        </div>
+
+        <div class="controls-right">
+            <div>
+                <span class="section-label">Format</span>
+                <div class="format-tabs">
+                    <button id="tabMp4" class="tab-btn active" onclick="setMode('mp4')">🎬 Video (MP4)</button>
+                    <button id="tabMp3" class="tab-btn" onclick="setMode('mp3')">🎵 Audio (MP3)</button>
+                </div>
+            </div>
+
+            <!-- Video Quality Dropdown -->
+            <div id="videoQualityGroup">
+                <span class="section-label">Video Quality</span>
+                <select id="videoQuality" class="select-box">
+                    <option value="1080p">1080p (Full HD)</option>
+                    <option value="720p" selected>720p (HD)</option>
+                    <option value="480p">480p (SD)</option>
+                    <option value="360p">360p (Low)</option>
+                </select>
+            </div>
+
+            <!-- Audio Quality Dropdown (Hidden by default) -->
+            <div id="audioQualityGroup" style="display: none;">
+                <span class="section-label">Audio Quality</span>
+                <select id="audioQuality" class="select-box">
+                    <option value="320" selected>320 kbps (High Quality)</option>
+                    <option value="192">192 kbps (Standard)</option>
+                    <option value="128">128 kbps (Economy)</option>
+                </select>
+            </div>
+
+            <button id="downloadBtn" class="download-btn" onclick="startDownload()">Download File</button>
+
+            <!-- Live Progress Bar & Stats Section -->
+            <div id="progressContainer" class="progress-container">
+                <div class="progress-header">
+                    <div>
+                        <span id="sizeText" class="stat-item">0.00 MB</span> 
+                        <span style="color: #64748b;">|</span> 
+                        <span id="fileSizeText" class="stat-item" style="color: #cbd5e1;">Size: --</span> 
+                        <span style="color: #64748b;">|</span> 
+                        <span id="speedText" class="stat-item" style="color: #38bdf8;">0.00 MB/s</span>
+                    </div>
+                    <button class="cancel-btn" onclick="cancelDownload()" title="Cancel Download">✕</button>
+                </div>
+                <div class="progress-bar-track">
+                    <div id="progressBar" class="progress-bar-fill"></div>
+                </div>
+                <div class="progress-footer">
+                    <span id="percentText">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeVideo = {};
+    let currentMode = 'mp4';
+    let abortController = null;
+
+    async function fetchVideoInfo() {
+        const url = document.getElementById('ytUrl').value.trim();
+        if (!url) return alert('Please enter a YouTube video URL');
+
+        const fetchBtn = document.getElementById('fetchBtn');
+        fetchBtn.innerText = 'Fetching...';
+        fetchBtn.disabled = true;
+
+        try {
+            const res = await fetch('/api/info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            activeVideo = { url, title: data.title };
+            document.getElementById('thumb').src = data.thumbnail;
+            document.getElementById('videoTitle').innerText = data.title;
+            document.getElementById('videoSurface').style.display = 'flex';
+        } catch (err) {
+            alert(err.message || 'Could not fetch video information');
+        } finally {
+            fetchBtn.innerText = 'Fetch Video';
+            fetchBtn.disabled = false;
+        }
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        if (mode === 'mp4') {
+            document.getElementById('tabMp4').classList.add('active');
+            document.getElementById('tabMp3').classList.remove('active');
+            document.getElementById('videoQualityGroup').style.display = 'block';
+            document.getElementById('audioQualityGroup').style.display = 'none';
+        } else {
+            document.getElementById('tabMp3').classList.add('active');
+            document.getElementById('tabMp4').classList.remove('active');
+            document.getElementById('videoQualityGroup').style.display = 'none';
+            document.getElementById('audioQualityGroup').style.display = 'block';
+        }
+    }
+
+    async function startDownload() {
+        let qualityParam = '';
+        if (currentMode === 'mp4') {
+            qualityParam = document.getElementById('videoQuality').value;
+        } else {
+            qualityParam = document.getElementById('audioQuality').value;
+        }
+
+        const downloadUrl = `/api/download?url=${encodeURIComponent(activeVideo.url)}&format=${currentMode}&quality=${qualityParam}`;
+
+        const downloadBtn = document.getElementById('downloadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const sizeText = document.getElementById('sizeText');
+        const fileSizeText = document.getElementById('fileSizeText');
+        const speedText = document.getElementById('speedText');
+        const percentText = document.getElementById('percentText');
+
+        // Reset UI state for downloading
+        downloadBtn.disabled = true;
+        downloadBtn.innerText = 'Downloading...';
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        sizeText.innerText = '0.00 MB';
+        fileSizeText.innerText = 'Size: --';
+        speedText.innerText = '0.00 MB/s';
+        percentText.innerText = '0%';
+
+        abortController = new AbortController();
+
+        try {
+            const response = await fetch(downloadUrl, { signal: abortController.signal });
+            if (!response.ok) throw new Error('Download request failed on server');
+
+            const contentLength = response.headers.get('content-length');
+            const customFileSize = response.headers.get('x-file-size');
+            let totalBytes = contentLength ? parseInt(contentLength, 10) : (customFileSize ? parseInt(customFileSize, 10) : 0);
+
+            const reader = response.body.getReader();
+            const chunks = [];
+            let receivedLength = 0;
+            let startTime = Date.now();
+            let lastTime = startTime;
+            let lastReceivedLength = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                chunks.push(value);
+                receivedLength += value.length;
+
+                let now = Date.now();
+                let chunkTimeSec = (now - lastTime) / 1000;
+
+                if (chunkTimeSec >= 0.25 || done) {
+                    let bytesPerSec = (receivedLength - lastReceivedLength) / (chunkTimeSec || 1);
+                    let speedMBps = (bytesPerSec / (1024 * 1024)).toFixed(2);
+                    let downloadedMB = (receivedLength / (1024 * 1024)).toFixed(2);
+
+                    sizeText.innerText = `${downloadedMB} MB`;
+                    speedText.innerText = `${speedMBps} MB/s`;
+
+                    let progressPercent = 0;
+                    if (totalBytes > 0) {
+                        progressPercent = Math.min(100, Math.round((receivedLength / totalBytes) * 100));
+                        fileSizeText.innerText = `Size: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB`;
+                    } else {
+                        progressPercent = Math.min(95, Math.round((receivedLength / (1024 * 1024 * 15)) * 100));
+                        fileSizeText.innerText = `Size: ${(receivedLength / (1024 * 1024)).toFixed(2)} MB*`;
+                    }
+
+                    progressBar.style.width = `${progressPercent}%`;
+                    percentText.innerText = `${progressPercent}%`;
+
+                    lastTime = now;
+                    lastReceivedLength = receivedLength;
+                }
+            }
+
+            progressBar.style.width = '100%';
+            percentText.innerText = '100%';
+            let finalMB = (receivedLength / (1024 * 1024)).toFixed(2);
+            fileSizeText.innerText = `Size: ${finalMB} MB`;
+
+            const blob = new Blob(chunks);
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = currentMode === 'mp3' ? `audio_${qualityParam}kbps.mp3` : `video_${qualityParam}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+
+            downloadBtn.innerText = 'Download Complete!';
+            setTimeout(() => {
+                downloadBtn.innerText = 'Download File';
+                downloadBtn.disabled = false;
+                progressContainer.style.display = 'none';
+            }, 3000);
+
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                console.log('Download canceled by user.');
+            } else {
+                alert('Error downloading file: ' + err.message);
+            }
+            resetDownloadState();
+        }
+    }
+
+    function cancelDownload() {
+        if (abortController) {
+            abortController.abort();
+        }
+        resetDownloadState();
+    }
+
+    function resetDownloadState() {
+        const downloadBtn = document.getElementById('downloadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        downloadBtn.innerText = 'Download File';
+        downloadBtn.disabled = false;
+        progressContainer.style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
